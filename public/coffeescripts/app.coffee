@@ -1,6 +1,7 @@
 class DomTest
   constructor: (@type = 'clone', @runs = 500) ->
     @setupElements()
+    @setupEvents()
 
   templates:
     clone: null
@@ -10,21 +11,53 @@ class DomTest
   setupElements: ->
     @templates.clone = @dispose @q('#test-container .row')
     @container = @empty @q('#test-container')
+    @status = $('.test-status')
 
-  run: (runs = @runs, type = @type) ->
-    @empty @container
-    switch @type
-      when 'clone' then @_runClone(runs)
-      when 'cloneFrag' then @_runCloneFrag(runs)
-      when 'inner' then @_runInner(runs)
-      when 'innerArr' then @_runInnerArr(runs)
+  setupEvents: ->
+    $(window).on 'test:container-emptied', =>
+      @status.text('Running test...')
+
+    $(window).on 'test:complete', =>
+      setTimeout =>
+        @status.text('')
+      , 500
+
+  run: (runs, type) ->
+    @_preRun()
+
+    runs = if runs? then runs else @runs
+    type = if type? then type else @type
+
+    @_tO =>
+      switch type
+        when 'clone' then @_runClone(runs)
+        when 'cloneFrag' then @_runCloneFrag(runs)
+        when 'inner' then @_runInner(runs)
+        when 'innerArr' then @_runInnerArr(runs)
+    , 'test:complete'
+
     return
+
+  _preRun: ->
+    @status.text('Removing previous content...')
+    emptyFn = -> @empty @container
+    @_tO emptyFn, 'test:container-emptied'
+
+  _tO: (fn, evt) ->
+    setTimeout =>
+      fn.apply(@)
+      $(window).trigger(evt)
+    , 0
+
+  _postRun: ->
+    @status.text('')
 
   _runClone: (runs) ->
     while runs--
       row = @templates.clone.cloneNode(true)
       @container.appendChild(row)
-    return
+
+    @_postRun()
 
   _runCloneFrag: (runs) ->
     tmpl = document.createDocumentFragment()
@@ -33,7 +66,8 @@ class DomTest
       tmpl.appendChild(@templates.clone.cloneNode(true))
 
     @container.appendChild tmpl
-    return
+    @_postRun()
+
 
   _runInner: (runs) ->
     tmpl = ""
@@ -42,7 +76,7 @@ class DomTest
       tmpl += @_getRowStr()
 
     @container.innerHTML += tmpl
-    return
+    @_postRun()
 
   _runInnerArr: (runs) ->
     tmpl = []
@@ -51,7 +85,7 @@ class DomTest
       tmpl.push @_getRowArr()
 
     @container.innerHTML += tmpl.join('')
-    return
+    @_postRun()
 
   _getRowStr: ->
     cols = 3

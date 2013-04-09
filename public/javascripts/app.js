@@ -53,6 +53,7 @@
       this.type = type != null ? type : 'clone';
       this.runs = runs != null ? runs : 500;
       this.setupElements();
+      this.setupEvents();
     }
 
     DomTest.prototype.templates = {
@@ -63,30 +64,64 @@
 
     DomTest.prototype.setupElements = function() {
       this.templates.clone = this.dispose(this.q('#test-container .row'));
-      return this.container = this.empty(this.q('#test-container'));
+      this.container = this.empty(this.q('#test-container'));
+      return this.status = $('.test-status');
+    };
+
+    DomTest.prototype.setupEvents = function() {
+      var _this = this;
+
+      $(window).on('test:container-emptied', function() {
+        return _this.status.text('Running test...');
+      });
+      return $(window).on('test:complete', function() {
+        return setTimeout(function() {
+          return _this.status.text('');
+        }, 500);
+      });
     };
 
     DomTest.prototype.run = function(runs, type) {
-      if (runs == null) {
-        runs = this.runs;
-      }
-      if (type == null) {
-        type = this.type;
-      }
-      this.empty(this.container);
-      switch (this.type) {
-        case 'clone':
-          this._runClone(runs);
-          break;
-        case 'cloneFrag':
-          this._runCloneFrag(runs);
-          break;
-        case 'inner':
-          this._runInner(runs);
-          break;
-        case 'innerArr':
-          this._runInnerArr(runs);
-      }
+      var _this = this;
+
+      this._preRun();
+      runs = runs != null ? runs : this.runs;
+      type = type != null ? type : this.type;
+      this._tO(function() {
+        switch (type) {
+          case 'clone':
+            return _this._runClone(runs);
+          case 'cloneFrag':
+            return _this._runCloneFrag(runs);
+          case 'inner':
+            return _this._runInner(runs);
+          case 'innerArr':
+            return _this._runInnerArr(runs);
+        }
+      }, 'test:complete');
+    };
+
+    DomTest.prototype._preRun = function() {
+      var emptyFn;
+
+      this.status.text('Removing previous content...');
+      emptyFn = function() {
+        return this.empty(this.container);
+      };
+      return this._tO(emptyFn, 'test:container-emptied');
+    };
+
+    DomTest.prototype._tO = function(fn, evt) {
+      var _this = this;
+
+      return setTimeout(function() {
+        fn.apply(_this);
+        return $(window).trigger(evt);
+      }, 0);
+    };
+
+    DomTest.prototype._postRun = function() {
+      return this.status.text('');
     };
 
     DomTest.prototype._runClone = function(runs) {
@@ -96,6 +131,7 @@
         row = this.templates.clone.cloneNode(true);
         this.container.appendChild(row);
       }
+      return this._postRun();
     };
 
     DomTest.prototype._runCloneFrag = function(runs) {
@@ -106,6 +142,7 @@
         tmpl.appendChild(this.templates.clone.cloneNode(true));
       }
       this.container.appendChild(tmpl);
+      return this._postRun();
     };
 
     DomTest.prototype._runInner = function(runs) {
@@ -116,6 +153,7 @@
         tmpl += this._getRowStr();
       }
       this.container.innerHTML += tmpl;
+      return this._postRun();
     };
 
     DomTest.prototype._runInnerArr = function(runs) {
@@ -126,6 +164,7 @@
         tmpl.push(this._getRowArr());
       }
       this.container.innerHTML += tmpl.join('');
+      return this._postRun();
     };
 
     DomTest.prototype._getRowStr = function() {

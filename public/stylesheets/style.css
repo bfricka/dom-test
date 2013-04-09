@@ -1038,3 +1038,4 @@ a.label:hover,a.label:focus,a.badge:hover,a.badge:focus{color:#ffffff;text-decor
 .test-form .btn-primary{margin-left:10px;-webkit-box-shadow:0 1px 0 rgba(0,0,0,0.5), 0 1px 8px rgba(0,0,0,0.28);-moz-box-shadow:0 1px 0 rgba(0,0,0,0.5), 0 1px 8px rgba(0,0,0,0.28);box-shadow:0 1px 0 rgba(0,0,0,0.5), 0 1px 8px rgba(0,0,0,0.28);}
 .test-container-header{border-bottom:1px solid #efefef;padding-bottom:10px;margin-top:30px;}
 .test-container{overflow-y:scroll;position:absolute;top:140px;bottom:20px;}
+.test-status{display:inline-block;margin-left:20px;font-size:14px;}
