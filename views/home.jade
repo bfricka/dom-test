@@ -1,0 +1,38 @@
+extends layout
+
+block content
+
+  .container.test-header
+    h1 DOM Test
+    .row
+      .form-inline.test-form
+        label(for='test-type') Test Type
+        select#test-type
+          option(value='clone') clone
+          option(value='cloneFrag') clone w/ doc fragment
+          option(value='inner') innerHTML + string concat
+          option(value='innerArr') innerHTML + array join
+
+        label(for='runs') Number of Runs
+        input#runs(type='text', value='500')
+
+        button#go.btn.btn-primary Go
+
+  h1.test-container-header Test Container
+  .test-container-wrapper
+    #test-container.test-container
+      .row
+        .span4
+          h2 Heading
+          p Donec id elit non mi porta gravida at eget metus. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus. Etiam porta sem malesuada magna mollis euismod. Donec sed odio dui.
+          p: a.btn(href='#') View details &raquo;
+
+        .span4
+          h2 Heading
+          p Donec id elit non mi porta gravida at eget metus. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus. Etiam porta sem malesuada magna mollis euismod. Donec sed odio dui.
+          p: a.btn(href='#') View details &raquo;
+
+        .span4
+          h2 Heading
+          p Donec id elit non mi porta gravida at eget metus. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus. Etiam porta sem malesuada magna mollis euismod. Donec sed odio dui.
+          p: a.btn(href='#') View details &raquo;
