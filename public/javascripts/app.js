@@ -100,24 +100,38 @@
       }
     }
 
+    , hasClass: function(el, className) {
+      var tester = RegExp(className)
+      , classList = el.classList || el.className.split(/\s+/)
+      , classes = [].slice.call(classList)
+      , len = classes.length
+      , i = 0;
+
+      while (i < len) {
+        if (tester.test(classes[i])) return true;
+        i++;
+      }
+
+      return false;
+    }
+
     , toggleClass: function(el, className, toggle){
       if (typeof el !== 'object') return;
 
-      var tester = new RegExp(className)
-      , replacer = new RegExp("(\\s+)?" + className)
+      var replacer = new RegExp("(\\s+)?" + className)
       , classes = el.className
-      , hasClass = tester.test(classes);
+      , hasClass = this.hasClass(el, className);
 
       // Toggle override
       if (toggle != null) {
         if (toggle) {
-          if (hasClass) return;
+          if (hasClass) return el;
           el.className += (" " + className);
         } else {
-          if (!hasClass) return;
+          if (!hasClass) return el;
           el.className = classes.replace(replacer, '');
         }
-        return;
+        return el;
       }
 
       if (hasClass) {
@@ -125,14 +139,16 @@
       } else {
         el.className += (" " + className);
       }
+
+      return el;
     }
 
     , addClass: function (el, className) {
-      this.toggleClass(el, className, true);
+      return this.toggleClass(el, className, true);
     }
 
     , removeClass: function (el, className) {
-      this.toggleClass(el, className, false);
+      return this.toggleClass(el, className, false);
     }
   };
 
@@ -148,153 +164,153 @@
       this.setupEvents();
     }
 
-    DomTest.prototype.templates = {
-      clone: null,
-      inner: null,
-      innerArr: null
-    };
+    DomTest.prototype = {
+      templates: {
+          clone: null
+        , inner: null
+        , innerArr: null
+      }
 
-    DomTest.prototype.setupElements = function() {
-      this.templates.clone = dom.dispose(dom.qs('#test-container .row'));
-      this.container = dom.empty(dom.qs('#test-container'));
-      this.status = $('.test-status');
-    };
+      , setupElements: function() {
+        this.templates.clone = dom.dispose(dom.qs('#test-container .row'));
+        this.container = dom.empty(dom.qs('#test-container'));
+        this.status = $('.test-status');
+      }
 
-    DomTest.prototype.setupEvents = function() {
-      var _this = this;
+      , setupEvents: function() {
+        var _this = this;
 
-      $(window).on('test:container-emptied', function() {
-        _this.timer = new Date().getTime();
-        _this.status.text('Running test...');
-      });
+        $(window).on('test:container-emptied', function() {
+          _this.timer = new Date().getTime();
+          _this.status.text('Running test...');
+        });
 
-      $(window).on('test:complete', function() {
+        $(window).on('test:complete', function() {
+          setTimeout(function() {
+            var finishedTime = new Date().getTime() - _this.timer;
+            _this.status.text('Finished in: ' + finishedTime + 'ms.');
+          }, 0);
+        });
+      }
+
+      , run: function(runs, type) {
+        var _this = this;
+
+        this._preRun();
+
+        runs = runs != null ? runs : this.runs;
+        type = type != null ? type : this.type;
+
+        this._tO(function() {
+          switch (type) {
+            case 'clone':
+              return _this._runClone(runs);
+            case 'cloneFrag':
+              return _this._runCloneFrag(runs);
+            case 'inner':
+              return _this._runInner(runs);
+            case 'innerArr':
+              return _this._runInnerArr(runs);
+          }
+        }, 'test:complete');
+      }
+
+      , _preRun: function() {
+        var emptyFn = function() { dom.empty(this.container); };
+
+        this.status.text('Removing previous content...');
+        this._tO(emptyFn, 'test:container-emptied');
+      }
+
+      , _tO: function(fn, evt) {
+        var _this = this;
+
         setTimeout(function() {
-          var finishedTime = new Date().getTime() - _this.timer;
-          _this.status.text('Finished in: ' + finishedTime + 'ms.');
-        }, 500);
-      });
-    };
+          fn.apply(_this);
+          $(window).trigger(evt);
+        }, 0);
+      }
 
-    DomTest.prototype.run = function(runs, type) {
-      var _this = this;
+      , _postRun: function() {
+        this.status.text('');
+      }
 
-      this._preRun();
-      runs = runs != null ? runs : this.runs;
-      type = type != null ? type : this.type;
-      this._tO(function() {
-        switch (type) {
-          case 'clone':
-            return _this._runClone(runs);
-          case 'cloneFrag':
-            return _this._runCloneFrag(runs);
-          case 'inner':
-            return _this._runInner(runs);
-          case 'innerArr':
-            return _this._runInnerArr(runs);
+      , _runClone: function(runs) {
+        var row;
+
+        while (runs--) {
+          row = this.templates.clone.cloneNode(true);
+          this.container.appendChild(row);
         }
-      }, 'test:complete');
-    };
 
-    DomTest.prototype._preRun = function() {
-      var emptyFn;
-
-      this.status.text('Removing previous content...');
-      emptyFn = function() {
-        dom.empty(this.container);
-      };
-
-      this._tO(emptyFn, 'test:container-emptied');
-    };
-
-    DomTest.prototype._tO = function(fn, evt) {
-      var _this = this;
-
-      setTimeout(function() {
-        fn.apply(_this);
-        $(window).trigger(evt);
-      }, 0);
-    };
-
-    DomTest.prototype._postRun = function() {
-      this.status.text('');
-    };
-
-    DomTest.prototype._runClone = function(runs) {
-      var row;
-
-      while (runs--) {
-        row = this.templates.clone.cloneNode(true);
-        this.container.appendChild(row);
+        this._postRun();
       }
 
-      this._postRun();
-    };
+      , _runCloneFrag: function(runs) {
+        var tmpl = document.createDocumentFragment();
 
-    DomTest.prototype._runCloneFrag = function(runs) {
-      var tmpl = document.createDocumentFragment();
+        while (runs--) {
+          tmpl.appendChild(this.templates.clone.cloneNode(true));
+        }
 
-      while (runs--) {
-        tmpl.appendChild(this.templates.clone.cloneNode(true));
+        this.container.appendChild(tmpl);
+        this._postRun();
       }
 
-      this.container.appendChild(tmpl);
-      this._postRun();
-    };
+      , _runInner: function(runs) {
+        var tmpl = "";
 
-    DomTest.prototype._runInner = function(runs) {
-      var tmpl = "";
+        while (runs--) {
+          tmpl += this._getRowStr();
+        }
 
-      while (runs--) {
-        tmpl += this._getRowStr();
+        this.container.innerHTML += tmpl;
+        this._postRun();
       }
 
-      this.container.innerHTML += tmpl;
-      this._postRun();
-    };
+      , _runInnerArr: function(runs) {
+        var tmpl = [];
 
-    DomTest.prototype._runInnerArr = function(runs) {
-      var tmpl = [];
+        while (runs--) {
+          tmpl.push(this._getRowArr());
+        }
 
-      while (runs--) {
-        tmpl.push(this._getRowArr());
+        this.container.innerHTML += tmpl.join('');
+        this._postRun();
       }
 
-      this.container.innerHTML += tmpl.join('');
-      this._postRun();
-    };
+      , _getRowStr: function() {
+        var cols = 3, tmpl = '<div class="row">';
 
-    DomTest.prototype._getRowStr = function() {
-      var cols = 3, tmpl = '<div class="row">';
+        while (cols--) {
+          tmpl += this._getColumnStr();
+        }
 
-      while (cols--) {
-        tmpl += this._getColumnStr();
+        tmpl += '</div>';
+        return tmpl;
       }
 
-      tmpl += '</div>';
-      return tmpl;
-    };
+      , _getColumnStr: function() {
+        var tmpl = '<div class="span4">' + '<h2>Heading</h2>' + '<p>Donec id elit non mi porta gravida at eget metus. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus. Etiam porta sem malesuada magna mollis euismod. Donec sed odio dui.</p>' + '<p>' + '<a href="#" class="btn">View details »</a>' + '</p>' + '</div>';
+        return tmpl;
+      }
 
-    DomTest.prototype._getColumnStr = function() {
-      var tmpl = '<div class="span4">' + '<h2>Heading</h2>' + '<p>Donec id elit non mi porta gravida at eget metus. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus. Etiam porta sem malesuada magna mollis euismod. Donec sed odio dui.</p>' + '<p>' + '<a href="#" class="btn">View details »</a>' + '</p>' + '</div>';
-      return tmpl;
-    };
+      , _getRowArr: function() {
+        var cols = 3, tmpl = ['<div class="row">'];
 
-    DomTest.prototype._getRowArr = function() {
-      var cols = 3, tmpl = ['<div class="row">'];
-
-      while (cols--) {
-        tmpl.push('<div class="span4">');
-        tmpl.push('<h2>Heading</h2>');
-        tmpl.push('<p>Donec id elit non mi porta gravida at eget metus. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus. Etiam porta sem malesuada magna mollis euismod. Donec sed odio dui.</p>');
-        tmpl.push('<p>');
-        tmpl.push('<a href="#" class="btn">View details »</a>');
-        tmpl.push('</p>');
+        while (cols--) {
+          tmpl.push('<div class="span4">');
+          tmpl.push('<h2>Heading</h2>');
+          tmpl.push('<p>Donec id elit non mi porta gravida at eget metus. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus. Etiam porta sem malesuada magna mollis euismod. Donec sed odio dui.</p>');
+          tmpl.push('<p>');
+          tmpl.push('<a href="#" class="btn">View details »</a>');
+          tmpl.push('</p>');
+          tmpl.push('</div>');
+        }
         tmpl.push('</div>');
-      }
-      tmpl.push('</div>');
 
-      return tmpl.join('');
+        return tmpl.join('');
+      }
     };
 
     return DomTest;
