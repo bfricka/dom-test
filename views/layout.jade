@@ -41,14 +41,18 @@ html.no-js(lang='en')
 
     script
       jQuery(function($){
-        var test = new DomTest();
+        var test = new DomTest()
+          , $testType = $('#test-type')
+          , $runs = $('#runs')
+          , $go = $('#go');
+
+        function getOpts() {
+          return { type: $testType.val(), runs: +$runs.val() };
+        }
 
         $('#go').on('click', function(ev){
           ev.preventDefault();
-          var type = $('#test-type').val();
-          var runs = +$('#runs').val();
-
-          test.run(runs, type);
+          var opts = getOpts();
+          test.run(opts);
         });
-
       });

@@ -74,6 +74,28 @@
       return childrenArr;
     }
 
+    , clone: function(el) {
+      var clone = el.cloneNode(true), ce = [clone], te = [el], i;
+
+      for (i = ce.length; i--;){
+        var node = ce[i], element = te[i];
+
+        /*<ltIE9>*/
+        if (node.clearAttributes) {
+          node.clearAttributes();
+          node.mergeAttributes(element);
+          node.removeAttribute('uniqueNumber');
+
+          if (node.options) {
+            var no = node.options, eo = element.options;
+            for (var j = no.length; j--;) no[j].selected = eo[j].selected;
+          }
+        }
+      }
+
+      return clone;
+    }
+
     , typeOf: function(obj) {
       return Object.prototype
         .toString.call(obj)
@@ -156,9 +178,10 @@
 }());
 (function(){
   DomTest = (function() {
-    function DomTest(type, runs) {
-      this.type = type != null ? type : 'clone';
-      this.runs = runs != null ? runs : 500;
+    function DomTest(opts) {
+      opts = opts || {};
+      this.testType = opts.testType || 'clone';
+      this.runs = opts.runs || 500;
 
       this.setupElements();
       this.setupEvents();
@@ -193,24 +216,23 @@
         });
       }
 
-      , run: function(runs, type) {
-        var _this = this;
+      , run: function(opts) {
+        var _this = this
+        , runs = opts.runs || this.runs
+        , testType = opts.testType || this.testType;
 
         this._preRun();
 
-        runs = runs != null ? runs : this.runs;
-        type = type != null ? type : this.type;
-
         this._tO(function() {
-          switch (type) {
+          switch (testType) {
             case 'clone':
-              return _this._runClone(runs);
+              return _this._runClone(runs, 'append');
             case 'cloneFrag':
-              return _this._runCloneFrag(runs);
-            case 'inner':
-              return _this._runInner(runs);
-            case 'innerArr':
-              return _this._runInnerArr(runs);
+              return _this._runCloneFrag(runs, 'append');
+            case 'strConcat':
+              return _this._runStrConcat(runs, 'inner');
+            case 'strJoin':
+              return _this._runStrJoin(runs, 'inner');
           }
         }, 'test:complete');
       }
@@ -235,47 +257,59 @@
         this.status.text('');
       }
 
-      , _runClone: function(runs) {
+      , insert: function(content, type, container) {
+        container = container || this.container;
+
+        if (type === 'append') {
+          container.appendChild(content);
+        } else {
+          container.innerHTML += (typeof content === 'string' ? content : content.outerHTML);
+        }
+      }
+
+      , _runClone: function(runs, insert) {
         var row;
 
         while (runs--) {
-          row = this.templates.clone.cloneNode(true);
-          this.container.appendChild(row);
+          row = dom.clone(this.templates.clone);
+          this.insert(row, insert);
         }
 
         this._postRun();
       }
 
-      , _runCloneFrag: function(runs) {
-        var tmpl = document.createDocumentFragment();
+      , _runCloneFrag: function(runs, insert) {
+        var tmpl = document.createDocumentFragment()
+        , node;
 
         while (runs--) {
-          tmpl.appendChild(this.templates.clone.cloneNode(true));
+          node = dom.clone(this.templates.clone);
+          tmpl.appendChild(node);
         }
 
-        this.container.appendChild(tmpl);
+        this.insert(tmpl, insert);
         this._postRun();
       }
 
-      , _runInner: function(runs) {
+      , _runStrConcat: function(runs, insert) {
         var tmpl = "";
 
         while (runs--) {
           tmpl += this._getRowStr();
         }
 
-        this.container.innerHTML += tmpl;
+        this.insert(tmpl, insert);
         this._postRun();
       }
 
-      , _runInnerArr: function(runs) {
+      , _runStrJoin: function(runs, insert) {
         var tmpl = [];
 
         while (runs--) {
           tmpl.push(this._getRowArr());
         }
 
-        this.container.innerHTML += tmpl.join('');
+        this.insert(tmpl.join(''), insert);
         this._postRun();
       }
 

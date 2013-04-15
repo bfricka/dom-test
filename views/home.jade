@@ -6,12 +6,12 @@ block content
     h1 DOM Test
     .row
       .form-inline.test-form
-        label(for='test-type') Test Type
+        label(for='clone-type') Clone type:
         select#test-type
-          option(value='clone') clone
-          option(value='cloneFrag') clone w/ doc fragment
-          option(value='inner') innerHTML + string concat
-          option(value='innerArr') innerHTML + array join
+          option(value='clone') clone + appendChild
+          option(value='cloneFrag') clone w/ doc fragment + appendChild
+          option(value='strConcat') string concat + innerHTML
+          option(value='strJoin') array join + innerHTML
 
         label(for='runs') Number of Runs
         input#runs(type='text', value='500')
